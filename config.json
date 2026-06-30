@@ -1,0 +1,32 @@
+{
+  "autoclicker": {
+    "toggle_key": "f6",
+    "interval_ms": 100,
+    "target_button": "left"
+  },
+  "macros": {
+    "lbutton_hold_toggle_key": "f2"
+  },
+  "remappings": {
+    "keys": {
+      "f13": "left_click",
+      "f14": "scroll_up",
+      "f15": "scroll_down"
+    },
+    "mouse": {
+      "x2": "ctrl+c"
+    }
+  },
+  "overlay": {
+    "enabled": true,
+    "position": "top_center",
+    "offset_x": 0,
+    "offset_y": 20,
+    "opacity": 0.85,
+    "font_family": "Segoe UI",
+    "font_size": 10,
+    "bg_color": "#1e1e2e",
+    "text_color": "#cdd6f4",
+    "active_color": "#a6e3a1"
+  }
+}

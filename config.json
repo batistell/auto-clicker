@@ -5,15 +5,23 @@
     "target_button": "left"
   },
   "macros": {
-    "lbutton_hold_toggle_key": "f2"
+    "lbutton_hold_toggle_key": "f2",
+    "w_shift_hold_toggle_key": "f4"
+  },
+  "key_spammer": {
+    "toggle_key": "f3",
+    "key_to_spam": "f",
+    "interval_ms": 100
   },
   "remappings": {
     "keys": {
       "f13": "left_click",
       "f14": "scroll_up",
-      "f15": "scroll_down"
+      "f15": "scroll_down",
+      "w": "delay_100, shift"
     },
     "mouse": {
+      "x1": "f",
       "x2": "ctrl+c"
     }
   },

@@ -67,8 +67,30 @@ class StatusOverlay:
         )
         self.hold_label.pack(side="left", padx=10)
 
+        # Separator 2
+        self.sep_label2 = tk.Label(
+            self.frame, 
+            text="|", 
+            font=self.font, 
+            fg="#585b70", 
+            bg=bg_color
+        )
+        self.sep_label2.pack(side="left")
+
+        # Key Spammer label
+        ks_cfg = config.get("key_spammer", {})
+        self.ks_key_display = ks_cfg.get("key_to_spam", "f").upper()
+        self.ks_label = tk.Label(
+            self.frame, 
+            text=f"KEY({self.ks_key_display}): OFF", 
+            font=self.font, 
+            fg=self.text_color, 
+            bg=bg_color
+        )
+        self.ks_label.pack(side="left", padx=10)
+
         # Calculate position and set geometry
-        self.width = 240
+        self.width = 360
         self.height = 36
         self.set_window_position()
 
@@ -133,14 +155,14 @@ class StatusOverlay:
             except Exception as e:
                 print(f"[Overlay] Failed to apply click-through window styles: {e}", file=sys.stderr)
 
-    def update_status(self, ac_active, hold_active):
+    def update_status(self, ac_active, hold_active, ks_active=False):
         """Thread-safe status update using Tkinter's root.after."""
         if not self.enabled:
             return
         
-        self.root.after(0, self._perform_update, ac_active, hold_active)
+        self.root.after(0, self._perform_update, ac_active, hold_active, ks_active)
 
-    def _perform_update(self, ac_active, hold_active):
+    def _perform_update(self, ac_active, hold_active, ks_active):
         if ac_active:
             self.ac_label.config(text="AC: ON", fg=self.active_color)
         else:
@@ -150,6 +172,11 @@ class StatusOverlay:
             self.hold_label.config(text="HOLD: ON", fg=self.active_color)
         else:
             self.hold_label.config(text="HOLD: OFF", fg=self.text_color)
+
+        if ks_active:
+            self.ks_label.config(text=f"KEY({self.ks_key_display}): ON", fg=self.active_color)
+        else:
+            self.ks_label.config(text=f"KEY({self.ks_key_display}): OFF", fg=self.text_color)
 
     def start(self):
         if self.enabled:

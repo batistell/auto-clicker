@@ -22,6 +22,11 @@ class TestAutoclickerLogic(unittest.TestCase):
             "macros": {
                 "lbutton_hold_toggle_key": "f7"
             },
+            "key_spammer": {
+                "toggle_key": "f3",
+                "key_to_spam": "f",
+                "interval_ms": 100
+            },
             "remappings": {
                 "keys": {
                     "f13": "left_click",
@@ -48,16 +53,27 @@ class TestAutoclickerLogic(unittest.TestCase):
     def test_controller_initial_states(self):
         self.assertFalse(self.controller.ac_active)
         self.assertFalse(self.controller.hold_active)
+        self.assertFalse(self.controller.ks_active)
         self.assertEqual(self.controller.ac_button, Button.left)
+        self.assertEqual(self.controller.ks_key, "f")
 
     def test_toggle_autoclicker(self):
         self.controller.toggle_autoclicker()
         self.assertTrue(self.controller.ac_active)
-        self.status_cb.assert_called_with(True, False)
+        self.status_cb.assert_called_with(True, False, False)
 
         self.controller.toggle_autoclicker()
         self.assertFalse(self.controller.ac_active)
-        self.status_cb.assert_called_with(False, False)
+        self.status_cb.assert_called_with(False, False, False)
+
+    def test_toggle_key_spammer(self):
+        self.controller.toggle_key_spammer()
+        self.assertTrue(self.controller.ks_active)
+        self.status_cb.assert_called_with(False, False, True)
+
+        self.controller.toggle_key_spammer()
+        self.assertFalse(self.controller.ks_active)
+        self.status_cb.assert_called_with(False, False, False)
 
     def test_toggle_left_click_hold(self):
         # Mock mouse controller press and release to avoid actual OS clicks during unit test
@@ -67,12 +83,12 @@ class TestAutoclickerLogic(unittest.TestCase):
         self.controller.toggle_left_click_hold()
         self.assertTrue(self.controller.hold_active)
         self.controller.mouse.press.assert_called_with(Button.left)
-        self.status_cb.assert_called_with(False, True)
+        self.status_cb.assert_called_with(False, True, False)
 
         self.controller.toggle_left_click_hold()
         self.assertFalse(self.controller.hold_active)
         self.controller.mouse.release.assert_called_with(Button.left)
-        self.status_cb.assert_called_with(False, False)
+        self.status_cb.assert_called_with(False, False, False)
 
     def test_key_to_str_resolution(self):
         self.assertEqual(self.listener.key_to_str(Key.f6), "f6")

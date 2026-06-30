@@ -17,7 +17,13 @@ def load_config():
                 "target_button": "left"
             },
             "macros": {
-                "lbutton_hold_toggle_key": "f7"
+                "lbutton_hold_toggle_key": "f7",
+                "w_shift_hold_toggle_key": "f4"
+            },
+            "key_spammer": {
+                "toggle_key": "f3",
+                "key_to_spam": "f",
+                "interval_ms": 100
             },
             "remappings": {
                 "keys": {

@@ -7,9 +7,10 @@ Utilitário leve em Python para remapear teclas/botões do mouse **Logitech MX M
 - **Mapeamento de Botões do Mouse:** Remapeia botões padrão do mouse (clique esquerdo, direito, clique do meio e botões laterais Voltar/Avançar `XButton1`/`XButton2`).
 - **Macro de Segurar o Clique Esquerdo:** Alterna o estado de segurar o botão esquerdo do mouse (clique contínuo pressionado) através de uma tecla configurável.
 - **Autoclicker:** Clica repetidamente em um intervalo de milissegundos configurável.
-- **HUD/Tooltip elegante na tela:** Um indicador visual sem bordas, semissensível e transparente que flutua na tela mostrando se o Autoclicker ou o Macro de segurar clique estão ativos. Ele é configurado com a API do Windows para ser totalmente "click-through", ou seja, você pode clicar através dele sem que ele atrapalhe seu jogo ou trabalho.
+- **Key Spammer (Repetidor de Tecla):** Repete a pulsação de uma tecla configurável (ex: `f`) em um intervalo ajustável quando acionado por uma tecla de atalho (ex: `F3`).
+- **HUD/Tooltip elegante na tela:** Um indicador visual sem bordas, semissensível e transparente que flutua na tela mostrando se o Autoclicker, o Macro de segurar clique ou o Key Spammer estão ativos. Ele é configurado com a API do Windows para ser totalmente "click-through", ou seja, você pode clicar através dele sem que ele atrapalhe seu jogo ou trabalho.
 - **Configuração JSON Simples:** Arquivo `config.json` para ajustar atalhos, velocidades, cores, fontes, transparência e posições do tooltip de forma fácil.
-
+ff
 ---
 
 ## Guia de Configuração com Logitech Options+
@@ -36,7 +37,12 @@ Você pode configurar todos os comportamentos no arquivo `config.json` na raiz d
     "target_button": "left"
   },
   "macros": {
-    "lbutton_hold_toggle_key": "f7"
+    "lbutton_hold_toggle_key": "f2"
+  },
+  "key_spammer": {
+    "toggle_key": "f3",
+    "key_to_spam": "f",
+    "interval_ms": 100
   },
   "remappings": {
     "keys": {
@@ -66,6 +72,9 @@ Você pode configurar todos os comportamentos no arquivo `config.json` na raiz d
 ### Parâmetros Importantes:
 - **`autoclicker.toggle_key`**: Tecla para ligar/desligar o autoclicker.
 - **`macros.lbutton_hold_toggle_key`**: Tecla que ativa/desativa o estado de "segurar" o botão esquerdo do mouse.
+- **`key_spammer.toggle_key`**: Tecla que liga/desliga o repetidor de tecla (por padrão `f3`).
+- **`key_spammer.key_to_spam`**: A tecla que será digitada repetidamente (por padrão `f`).
+- **`key_spammer.interval_ms`**: Intervalo em milissegundos entre as pulsações de tecla do repetidor.
 - **`remappings.keys`**: Dicionário de remapeamento de teclas do teclado para ações. Ações suportadas: `"left_click"`, `"right_click"`, `"middle_click"`, `"scroll_up"`, `"scroll_down"` ou qualquer caractere/atalho.
 - **`remappings.mouse`**: Dicionário de remapeamento de botões do mouse (`"x1"`, `"x2"`, `"middle"`) para atalhos do teclado.
 - **`overlay.position`**: Onde o tooltip ficará posicionado (`"top_left"`, `"top_center"`, `"top_right"`, `"bottom_left"`, `"bottom_center"`, `"bottom_right"`, ou uma string com coordenadas `"X,Y"` ex: `"500,300"`).

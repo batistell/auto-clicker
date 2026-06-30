@@ -12,11 +12,18 @@ class InputListener:
         
         macro_cfg = self.config.get("macros", {})
         self.hold_toggle_key = macro_cfg.get("lbutton_hold_toggle_key", "").lower()
+        self.w_shift_hold_toggle_key = macro_cfg.get("w_shift_hold_toggle_key", "").lower()
         
+        ks_cfg = self.config.get("key_spammer", {})
+        self.ks_toggle_key = ks_cfg.get("toggle_key", "").lower()
+
         remappings = self.config.get("remappings", {})
         self.key_remappings = remappings.get("keys", {})
         self.mouse_remappings = remappings.get("mouse", {})
         
+        # Track currently physically pressed keys to ignore repeat/held keyboard events
+        self.pressed_keys = set()
+
         # Initialize listeners to None
         self.keyboard_listener = None
         self.mouse_listener = None
@@ -48,6 +55,11 @@ class InputListener:
 
         key_str = self.key_to_str(key)
         
+        # Debounce/Filter out repeating keystroke events sent by the OS
+        if key_str in self.pressed_keys:
+            return
+        self.pressed_keys.add(key_str)
+
         # Check autoclicker toggle key
         if key_str == self.ac_toggle_key:
             self.controller.toggle_autoclicker()
@@ -58,11 +70,25 @@ class InputListener:
             self.controller.toggle_left_click_hold()
             return
 
+        # Check key spammer toggle key
+        if key_str == self.ks_toggle_key:
+            self.controller.toggle_key_spammer()
+            return
+
         # Check key remappings
         if key_str in self.key_remappings:
             action = self.key_remappings[key_str]
             # Run action in a separate thread so we do not block pynput's hook thread
             threading.Thread(target=self.controller.execute_action, args=(action,), daemon=True).start()
+
+    def on_key_release(self, key):
+        # Ignore events simulated by our own controller
+        if getattr(self.controller, 'is_simulating', False):
+            return
+
+        key_str = self.key_to_str(key)
+        if key_str in self.pressed_keys:
+            self.pressed_keys.remove(key_str)
 
     def on_mouse_click(self, x, y, button, pressed):
         # Ignore events simulated by our own controller
@@ -74,6 +100,16 @@ class InputListener:
             return
 
         btn_str = self.mouse_btn_to_str(button)
+
+        # Debounce to prevent double-triggering (common with side buttons / Logitech drivers)
+        import time
+        now = time.time()
+        if not hasattr(self, '_last_mouse_time'):
+            self._last_mouse_time = {}
+        last_time = self._last_mouse_time.get(btn_str, 0)
+        if now - last_time < 0.15:  # 150ms debounce
+            return
+        self._last_mouse_time[btn_str] = now
         
         # Check if mouse button triggers autoclicker or macro hold
         if btn_str == self.ac_toggle_key:
@@ -82,6 +118,10 @@ class InputListener:
             
         if btn_str == self.hold_toggle_key:
             self.controller.toggle_left_click_hold()
+            return
+
+        if btn_str == self.ks_toggle_key:
+            self.controller.toggle_key_spammer()
             return
 
         # Check mouse button remappings
@@ -93,7 +133,7 @@ class InputListener:
     def start(self):
         """Starts listeners on background threads."""
         print("[Listener] Starting keyboard and mouse listeners...")
-        self.keyboard_listener = keyboard.Listener(on_press=self.on_key_press)
+        self.keyboard_listener = keyboard.Listener(on_press=self.on_key_press, on_release=self.on_key_release)
         self.mouse_listener = mouse.Listener(on_click=self.on_mouse_click)
         
         self.keyboard_listener.start()

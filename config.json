@@ -6,7 +6,7 @@
   },
   "macros": {
     "lbutton_hold_toggle_key": "f2",
-    "w_shift_hold_toggle_key": "f4"
+    "w_shift_hold_toggle_key": "alt+w"
   },
   "key_spammer": {
     "toggle_key": "f3",
@@ -29,7 +29,7 @@
     "enabled": true,
     "position": "top_center",
     "offset_x": 0,
-    "offset_y": 20,
+    "offset_y": 100,
     "opacity": 0.85,
     "font_family": "Segoe UI",
     "font_size": 10,

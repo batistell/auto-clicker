@@ -7,7 +7,11 @@ from controller import InputController
 from listener import InputListener
 
 def load_config():
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(base_dir, "config.json")
     if not os.path.exists(config_path):
         print(f"[Main] config.json not found at {config_path}. Creating a default one.")
         default_config = {
@@ -18,7 +22,7 @@ def load_config():
             },
             "macros": {
                 "lbutton_hold_toggle_key": "f7",
-                "w_shift_hold_toggle_key": "f4"
+                "w_shift_hold_toggle_key": "alt+w"
             },
             "key_spammer": {
                 "toggle_key": "f3",
@@ -39,7 +43,7 @@ def load_config():
                 "enabled": True,
                 "position": "top_center",
                 "offset_x": 0,
-                "offset_y": 20,
+                "offset_y": 100,
                 "opacity": 0.85,
                 "font_family": "Segoe UI",
                 "font_size": 10,
@@ -63,9 +67,47 @@ def load_config():
         print(f"[Main] Error reading config.json: {e}. Using fallback defaults.")
         sys.exit(1)
 
+def apply_profile(config, escolha):
+    """Filters the config dictionary based on user's profile selection."""
+    if escolha == "2":
+        # Remove mouse side button remappings (x1, x2)
+        if "remappings" in config and "mouse" in config["remappings"]:
+            mouse_remap = config["remappings"]["mouse"]
+            if "x1" in mouse_remap:
+                del mouse_remap["x1"]
+            if "x2" in mouse_remap:
+                del mouse_remap["x2"]
+        # Clear toggle keys if they were mapped to x1 or x2 to avoid activation by mistake
+        if "autoclicker" in config and config["autoclicker"].get("toggle_key") in ("x1", "x2"):
+            config["autoclicker"]["toggle_key"] = ""
+        if "macros" in config:
+            if config["macros"].get("lbutton_hold_toggle_key") in ("x1", "x2"):
+                config["macros"]["lbutton_hold_toggle_key"] = ""
+            if config["macros"].get("w_shift_hold_toggle_key") in ("x1", "x2"):
+                config["macros"]["w_shift_hold_toggle_key"] = ""
+        if "key_spammer" in config and config["key_spammer"].get("toggle_key") in ("x1", "x2"):
+            config["key_spammer"]["toggle_key"] = ""
+    return config
+
 def main():
     print("=== Logitech MX Autoclicker & Remapper Starting ===")
     config = load_config()
+
+    print("\nSelecione o modo de inicialização:")
+    print("1. Palworld (com os controles dos botões Back/Forward do MX Master 3)")
+    print("2. Normal (sem os controles dos botões Back/Forward do MX Master 3)")
+    try:
+        escolha = input("Escolha (1 ou 2) [Padrão: 1]: ").strip()
+    except (KeyboardInterrupt, EOFError):
+        print("\n[Main] Inicialização cancelada pelo usuário.")
+        sys.exit(0)
+
+    if escolha == "2":
+        print("[Main] Carregando modo Normal (sem botões Back/Forward)...")
+    else:
+        print("[Main] Carregando modo Palworld (com botões Back/Forward)...")
+        
+    config = apply_profile(config, escolha)
 
     # Initialize components
     overlay = StatusOverlay(config)

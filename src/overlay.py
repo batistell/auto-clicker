@@ -89,8 +89,28 @@ class StatusOverlay:
         )
         self.ks_label.pack(side="left", padx=10)
 
+        # Separator 3
+        self.sep_label3 = tk.Label(
+            self.frame, 
+            text="|", 
+            font=self.font, 
+            fg="#585b70", 
+            bg=bg_color
+        )
+        self.sep_label3.pack(side="left")
+
+        # Auto Run label
+        self.run_label = tk.Label(
+            self.frame, 
+            text="RUN: OFF", 
+            font=self.font, 
+            fg=self.text_color, 
+            bg=bg_color
+        )
+        self.run_label.pack(side="left", padx=10)
+
         # Calculate position and set geometry
-        self.width = 360
+        self.width = 460
         self.height = 36
         self.set_window_position()
 
@@ -155,14 +175,14 @@ class StatusOverlay:
             except Exception as e:
                 print(f"[Overlay] Failed to apply click-through window styles: {e}", file=sys.stderr)
 
-    def update_status(self, ac_active, hold_active, ks_active=False):
+    def update_status(self, ac_active, hold_active, ks_active=False, run_active=False):
         """Thread-safe status update using Tkinter's root.after."""
         if not self.enabled:
             return
         
-        self.root.after(0, self._perform_update, ac_active, hold_active, ks_active)
+        self.root.after(0, self._perform_update, ac_active, hold_active, ks_active, run_active)
 
-    def _perform_update(self, ac_active, hold_active, ks_active):
+    def _perform_update(self, ac_active, hold_active, ks_active, run_active):
         if ac_active:
             self.ac_label.config(text="AC: ON", fg=self.active_color)
         else:
@@ -177,6 +197,11 @@ class StatusOverlay:
             self.ks_label.config(text=f"KEY({self.ks_key_display}): ON", fg=self.active_color)
         else:
             self.ks_label.config(text=f"KEY({self.ks_key_display}): OFF", fg=self.text_color)
+
+        if run_active:
+            self.run_label.config(text="RUN: ON", fg=self.active_color)
+        else:
+            self.run_label.config(text="RUN: OFF", fg=self.text_color)
 
     def start(self):
         if self.enabled:

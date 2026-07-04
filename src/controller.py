@@ -42,6 +42,8 @@ class InputController:
         self.hold_active = False
         self.ks_active = False
         self.w_shift_hold_active = False
+        self.w_press_pending_release = False
+        self.expected_simulated_w_presses = 0
         self.is_simulating = False
         self.running = True
         
@@ -106,22 +108,55 @@ class InputController:
         self.w_shift_hold_active = not self.w_shift_hold_active
         print(f"[Controller] Auto Run (W+Shift Hold): {'ON' if self.w_shift_hold_active else 'OFF'}")
         
+        # Check if the trigger key contains 'w'
+        macro_cfg = self.config.get("macros", {})
+        trigger_key = macro_cfg.get("w_shift_hold_toggle_key", "").lower().strip()
+        has_w_in_trigger = trigger_key.endswith("w")
+        
         try:
-            self.is_simulating = True
             if self.w_shift_hold_active:
-                self.keyboard.press('w')
-                time.sleep(0.03)
-                self.keyboard.press(Key.shift)
+                if has_w_in_trigger:
+                    self.w_press_pending_release = True
+                    print("[Controller] Auto Run: Aguardando soltura física da tecla W para iniciar...")
+                else:
+                    self.w_press_pending_release = False
+                    self.is_simulating = True
+                    self.expected_simulated_w_presses += 1
+                    self.keyboard.press('w')
+                    time.sleep(0.03)
+                    self.keyboard.press(Key.shift)
+                    time.sleep(0.1)
             else:
+                self.w_press_pending_release = False
+                self.is_simulating = True
                 self.keyboard.release(Key.shift)
                 time.sleep(0.03)
                 self.keyboard.release('w')
+                time.sleep(0.1)
         except Exception as e:
             print(f"[Controller] Error during W+Shift hold toggle: {e}")
         finally:
             self.is_simulating = False
             
         self._notify_status()
+
+    def start_w_shift_hold_after_release(self):
+        """Starts the virtual hold after the user releases the physical key."""
+        if not self.w_shift_hold_active:
+            return
+        self.w_press_pending_release = False
+        print("[Controller] Auto Run: Tecla W solta. Iniciando hold virtual...")
+        try:
+            self.is_simulating = True
+            self.expected_simulated_w_presses += 1
+            self.keyboard.press('w')
+            time.sleep(0.03)
+            self.keyboard.press(Key.shift)
+            time.sleep(0.1)
+        except Exception as e:
+            print(f"[Controller] Error starting W+Shift hold: {e}")
+        finally:
+            self.is_simulating = False
 
     def release_all(self):
         """Releases the hold state if active, useful for shutdown."""
@@ -184,6 +219,7 @@ class InputController:
         except Exception as e:
             print(f"[Controller] Error typing key '{key_str}': {e}")
         finally:
+            time.sleep(0.05)  # Buffer to allow hook thread to process simulated events
             self.is_simulating = False
 
     def execute_action(self, action_str):
@@ -286,6 +322,7 @@ class InputController:
         except Exception as e:
             print(f"[Controller] Error sending key combination '{combo_str}': {e}")
         finally:
+            time.sleep(0.05)  # Buffer to allow hook thread to process simulated events
             self.is_simulating = False
             # Release modifiers in reverse order
             for mod in reversed(pressed_mods):

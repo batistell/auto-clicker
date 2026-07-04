@@ -48,6 +48,33 @@ class InputListener:
         # x1 -> mouse4, x2 -> mouse5
         return btn_str
 
+    def is_modifier_pressed(self, mod_name):
+        mod_name = mod_name.lower().strip()
+        if mod_name == "ctrl":
+            return any(k in self.pressed_keys for k in ("ctrl_l", "ctrl_r", "ctrl"))
+        elif mod_name == "alt":
+            return any(k in self.pressed_keys for k in ("alt_l", "alt_r", "alt_gr", "alt"))
+        elif mod_name == "shift":
+            return any(k in self.pressed_keys for k in ("shift_l", "shift_r", "shift"))
+        elif mod_name in ("win", "cmd"):
+            return any(k in self.pressed_keys for k in ("cmd_l", "cmd_r", "cmd"))
+        return False
+
+    def is_trigger_active(self, key_str, toggle_cfg_str):
+        if not toggle_cfg_str:
+            return False
+        toggle_cfg_str = toggle_cfg_str.lower().strip()
+        if "+" in toggle_cfg_str:
+            parts = toggle_cfg_str.split("+")
+            base_key = parts[-1].strip()
+            modifiers = parts[:-1]
+            if key_str != base_key:
+                return False
+            # Check if all modifiers are pressed
+            return all(self.is_modifier_pressed(m) for m in modifiers)
+        else:
+            return key_str == toggle_cfg_str
+
     def on_key_press(self, key):
         # Ignore events simulated by our own controller
         if getattr(self.controller, 'is_simulating', False):
@@ -55,24 +82,39 @@ class InputListener:
 
         key_str = self.key_to_str(key)
         
+        # Ignore simulated 'w' presses from the macro toggle
+        if key_str == 'w' and getattr(self.controller, 'expected_simulated_w_presses', 0) > 0:
+            self.controller.expected_simulated_w_presses -= 1
+            return
+
         # Debounce/Filter out repeating keystroke events sent by the OS
         if key_str in self.pressed_keys:
             return
         self.pressed_keys.add(key_str)
 
+        # Cancel Auto Run (W+Shift Hold) macro if active and user presses 'w'
+        if self.controller.w_shift_hold_active and key_str == 'w':
+            self.controller.toggle_w_shift_hold()
+            return
+
         # Check autoclicker toggle key
-        if key_str == self.ac_toggle_key:
+        if self.is_trigger_active(key_str, self.ac_toggle_key):
             self.controller.toggle_autoclicker()
             return
             
         # Check hold macro toggle key
-        if key_str == self.hold_toggle_key:
+        if self.is_trigger_active(key_str, self.hold_toggle_key):
             self.controller.toggle_left_click_hold()
             return
 
         # Check key spammer toggle key
-        if key_str == self.ks_toggle_key:
+        if self.is_trigger_active(key_str, self.ks_toggle_key):
             self.controller.toggle_key_spammer()
+            return
+
+        # Check W+Shift hold toggle key
+        if self.is_trigger_active(key_str, self.w_shift_hold_toggle_key):
+            self.controller.toggle_w_shift_hold()
             return
 
         # Check key remappings
@@ -89,6 +131,10 @@ class InputListener:
         key_str = self.key_to_str(key)
         if key_str in self.pressed_keys:
             self.pressed_keys.remove(key_str)
+
+        # Trigger virtual press if it was pending this key's release
+        if key_str == 'w' and getattr(self.controller, 'w_press_pending_release', False):
+            threading.Thread(target=self.controller.start_w_shift_hold_after_release, daemon=True).start()
 
     def on_mouse_click(self, x, y, button, pressed):
         # Ignore events simulated by our own controller
@@ -112,16 +158,20 @@ class InputListener:
         self._last_mouse_time[btn_str] = now
         
         # Check if mouse button triggers autoclicker or macro hold
-        if btn_str == self.ac_toggle_key:
+        if self.is_trigger_active(btn_str, self.ac_toggle_key):
             self.controller.toggle_autoclicker()
             return
             
-        if btn_str == self.hold_toggle_key:
+        if self.is_trigger_active(btn_str, self.hold_toggle_key):
             self.controller.toggle_left_click_hold()
             return
 
-        if btn_str == self.ks_toggle_key:
+        if self.is_trigger_active(btn_str, self.ks_toggle_key):
             self.controller.toggle_key_spammer()
+            return
+
+        if self.is_trigger_active(btn_str, self.w_shift_hold_toggle_key):
+            self.controller.toggle_w_shift_hold()
             return
 
         # Check mouse button remappings

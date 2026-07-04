@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+build/
+dist/
+autoclicker.spec
+.venv/
+.idea/
+.vscode/

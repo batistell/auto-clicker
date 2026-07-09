@@ -17,8 +17,7 @@
     "keys": {
       "f13": "left_click",
       "f14": "scroll_up",
-      "f15": "scroll_down",
-      "w": "delay_100, shift"
+      "f15": "scroll_down"
     },
     "mouse": {
       "x1": "f",

@@ -284,5 +284,69 @@ class TestPendingRelease(unittest.TestCase):
         
         controller.release_all()
 
+class TestWShiftHoldTriggerBehavior(unittest.TestCase):
+    def setUp(self):
+        self.config = {
+            "macros": {
+                "w_shift_hold_toggle_key": "alt+w"
+            }
+        }
+        self.controller = InputController(self.config, status_callback=MagicMock())
+        self.listener = InputListener(self.config, self.controller)
+        self.controller.keyboard.press = MagicMock()
+        self.controller.keyboard.release = MagicMock()
+
+    def tearDown(self):
+        self.controller.release_all()
+
+    def test_alt_w_enables_but_does_not_disable(self):
+        # 1. Start with inactive
+        self.assertFalse(self.controller.w_shift_hold_active)
+
+        # Simulate user pressing 'alt+w' to enable
+        self.listener.pressed_keys.add("alt_l")
+        self.listener.on_key_press(KeyCode(char='w'))
+        
+        # Should now be active
+        self.assertTrue(self.controller.w_shift_hold_active)
+        self.assertTrue(self.controller.w_press_pending_release)
+        
+        # Start hold synchronously
+        self.controller.start_w_shift_hold_after_release()
+        
+        # Simulate user releasing 'w'
+        self.listener.on_key_release(KeyCode(char='w'))
+        self.listener.pressed_keys.discard("alt_l")
+        
+        # Reset expected simulated presses since we mock keyboard calls
+        self.controller.expected_simulated_w_presses = 0
+        
+        # Reset mocks
+        self.controller.keyboard.press.reset_mock()
+        self.controller.keyboard.release.reset_mock()
+        
+        # Simulate pressing 'alt+w' again while active
+        self.listener.pressed_keys.add("alt_l")
+        self.listener.on_key_press(KeyCode(char='w'))
+        
+        # Should STILL be active (alt+w does not disable it)
+        self.assertTrue(self.controller.w_shift_hold_active)
+        self.controller.keyboard.release.assert_not_called()
+
+        # Simulate user releasing 'w'
+        self.listener.on_key_release(KeyCode(char='w'))
+        # Release 'alt' modifier
+        self.listener.pressed_keys.discard("alt_l")
+
+        # Reset expected simulated presses
+        self.controller.expected_simulated_w_presses = 0
+
+        # Simulate pressing 'w' (without alt)
+        self.listener.on_key_press(KeyCode(char='w'))
+
+        # Should now be disabled
+        self.assertFalse(self.controller.w_shift_hold_active)
+
 if __name__ == "__main__":
     unittest.main()
+

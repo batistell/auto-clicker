@@ -92,8 +92,8 @@ class InputListener:
             return
         self.pressed_keys.add(key_str)
 
-        # Cancel Auto Run (W+Shift Hold) macro if active and user presses 'w'
-        if self.controller.w_shift_hold_active and key_str == 'w':
+        # Cancel Auto Run (W+Shift Hold) macro if active and user presses 'w' (without alt)
+        if self.controller.w_shift_hold_active and key_str == 'w' and not self.is_modifier_pressed("alt"):
             self.controller.toggle_w_shift_hold()
             return
 
@@ -112,9 +112,10 @@ class InputListener:
             self.controller.toggle_key_spammer()
             return
 
-        # Check W+Shift hold toggle key
+        # Check W+Shift hold toggle key (only enable via hotkey, disable is handled by pressing 'w')
         if self.is_trigger_active(key_str, self.w_shift_hold_toggle_key):
-            self.controller.toggle_w_shift_hold()
+            if not self.controller.w_shift_hold_active:
+                self.controller.toggle_w_shift_hold()
             return
 
         # Check key remappings
@@ -171,7 +172,8 @@ class InputListener:
             return
 
         if self.is_trigger_active(btn_str, self.w_shift_hold_toggle_key):
-            self.controller.toggle_w_shift_hold()
+            if not self.controller.w_shift_hold_active:
+                self.controller.toggle_w_shift_hold()
             return
 
         # Check mouse button remappings
